@@ -42,7 +42,13 @@ class Connection:
         self.password = pwdEntry.get().strip()
         if varval.get() == 1:
             self.command_1 = 'sudo -u mqm runmqsc ' + r1_1.get()
-            self.command_2 = 'display qlocal ' + "('" + r1_3.get() + "') CURDEPTH MAXDEPTH"
+            if var1_2.get() == 'display':
+                global r1_4_temp
+                r1_4_temp = r1_4.get()
+                self.command_2 = var1_2.get() + ' qlocal ' + "('" + r1_4.get() + "') CURDEPTH MAXDEPTH"
+                r1_4.delete(0,'end')
+            elif var1_2.get() == "alter":
+                self.command_2 = var1_2.get() + ' qlocal' + "('" + r1_4_temp + "') MAXDEPTH(" + r1_4.get() + ")" 
         elif varval.get() == 2:
             self.command_1 = 'runmqsc ' + r2_1.get()
             self.command_2 = var2_2.get() + " channel('" + r2_3.get() + "')"  
@@ -70,21 +76,21 @@ class Connection:
             
         if(varval.get() == 2):
             r1_1.delete(0, 'end')
-            r1_3.delete(0, 'end')
+            r1_4.delete(0, 'end')
             r3_2.delete(0, 'end')
             r3_3.delete(0, 'end')
             r4_1.delete(0, 'end')
         
         if(varval.get() == 3):
             r1_1.delete(0, 'end')
-            r1_3.delete(0, 'end')
+            r1_4.delete(0, 'end')
             r2_1.delete(0, 'end')
             r2_3.delete(0, 'end')
             r4_1.delete(0, 'end')
             
         if(varval.get() == 4):
             r1_1.delete(0, 'end')
-            r1_3.delete(0, 'end')
+            r1_4.delete(0, 'end')
             r2_1.delete(0, 'end')
             r2_3.delete(0, 'end')
             r3_2.delete(0, 'end')
@@ -181,7 +187,7 @@ def clipboard_paste(event):
             serverEntry.delete(0, 'end')
             serverEntry.insert(0,data[0])
             r1_1.insert(0, data[1])
-            r1_3.insert(0, data[2])
+            r1_4.insert(0, data[2])
             
         if varval.get() == 2:
             serverEntry.delete(0, 'end')
@@ -249,16 +255,16 @@ def F4(event):
     
 def change_color():
     widgets_bw = [serverFrame, serverEntry, portEntry, unameEntry, pwdEntry, saveButton,
-               scriptFrame, r1_1, r1_2, r1_3, r2_1, r2_2, r2_3, r3_1, r3_2, r3_3, r4_1, 
+               scriptFrame, r1_1, r1_2, r1_3, r1_4, r2_1, r2_2, r2_3, r3_1, r3_2, r3_3, r4_1, 
                outputFrame, outpt]
     
     widgets_b = [scriptFrame_1, scriptFrame_2, scriptFrame_3, scriptFrame_4]
     
-    widgets_optbutt = [r2_2, r3_1]
+    widgets_optbutt = [r1_2, r2_2, r3_1]
     
     widgets_radio = [r1, r2, r3, r4]
     
-    widgets_text = [serverEntry, unameEntry, portEntry, pwdEntry, r1_1, r1_3, r2_1, r2_3, r3_2, r3_3, r4_1]
+    widgets_text = [serverEntry, unameEntry, portEntry, pwdEntry, r1_1, r1_4, r2_1, r2_3, r3_2, r3_3, r4_1]
     
     for wid in widgets_bw:
         wid.configure(bg = "black", fg = "white")
@@ -314,16 +320,20 @@ scriptFrame = LabelFrame(root, text = "Scripts", padx = 15, pady = 15)
 scriptFrame.grid(row = 1, column = 0)
 
 varval = IntVar()
+var1_2 = StringVar()
+var1_2.set('display')
 scriptFrame_1 = Frame(scriptFrame)
 scriptFrame_1.grid(row = 0, column = 0, sticky = W, pady = 5)
 r1 = Radiobutton(scriptFrame_1, text = "sudo -u mqm runmqsc", variable = varval, value = 1)
 r1.grid(row = 0, column = 0)
 r1_1 = Entry(scriptFrame_1)
 r1_1.grid(row = 0, column = 1)
-r1_2 = Label(scriptFrame_1, text = "display qlocal")
+r1_2 = OptionMenu(scriptFrame_1, var1_2, 'display', 'alter')
 r1_2.grid(row = 0, column = 2)
-r1_3 = Entry(scriptFrame_1)
+r1_3 = Label(scriptFrame_1, text = "qlocal")
 r1_3.grid(row = 0, column = 3)
+r1_4 = Entry(scriptFrame_1)
+r1_4.grid(row = 0, column = 4)
 
 var2_2 = StringVar()
 var2_2.set("display")
