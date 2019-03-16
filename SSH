@@ -208,11 +208,7 @@ def prev_command_get(event):
     r4_1.delete(0, 'end')
     r4_1.insert(0, e[prev_command_count])
     prev_command_count += 1
-    
 
-def exec_test():
-    print(varval.get())
-    
 def thread1_event_set(event):
     thread1_event.set()
     if r4_1.get() != "":
@@ -220,7 +216,6 @@ def thread1_event_set(event):
     if r4_1_focus:
         global prev_command_count
         prev_command_count = 0
-    
     
 def thread1_idle_set(event = None):
     thread1_idle.set()
@@ -251,11 +246,40 @@ def F3(event):
 def F4(event):
     varval.set(4)
     r4_1.focus_set()
+    
+def change_color():
+    widgets_bw = [serverFrame, serverEntry, portEntry, unameEntry, pwdEntry, saveButton,
+               scriptFrame, r1_1, r1_2, r1_3, r2_1, r2_2, r2_3, r3_1, r3_2, r3_3, r4_1, 
+               outputFrame, outpt]
+    
+    widgets_b = [scriptFrame_1, scriptFrame_2, scriptFrame_3, scriptFrame_4]
+    
+    widgets_optbutt = [r2_2, r3_1]
+    
+    widgets_radio = [r1, r2, r3, r4]
+    
+    widgets_text = [serverEntry, unameEntry, portEntry, pwdEntry, r1_1, r1_3, r2_1, r2_3, r3_2, r3_3, r4_1]
+    
+    for wid in widgets_bw:
+        wid.configure(bg = "black", fg = "white")
+        
+    for wid in widgets_b:
+        wid.configure(bg = "black")
 
-
+    for wid in widgets_optbutt:
+        wid.configure(bg = "black", fg = "white", activebackground = "black", activeforeground = "white", disabledforeground = 'black', highlightthickness=0)
+        wid['menu'].config(bg = "black", fg = "white", activebackground = "black", activeforeground = "white", selectcolor = "white", borderwidth = 0)
+    
+    for wid in widgets_radio:
+        wid.configure(bg = "black", fg = "white", activebackground = "black", activeforeground = "white", highlightbackground = "black", highlightcolor = "white", selectcolor = "black")
+        
+    for wid in widgets_text:
+        wid.configure(insertbackground = "white")
     
 root = Tk()
 root.title("SSH")
+root.configure(bg = "black")
+root.geometry('960x1080+951+0')
 
 prev_command_list = []
 prev_command_count = 0
@@ -265,16 +289,16 @@ r4_1_focus = False
 serverFrame = LabelFrame(root, text = "Server Connection", padx = 15, pady = 15)
 serverFrame.grid(row = 0, column = 0)
 
-Label(serverFrame, text = "Server").grid(row = 0, column = 0)
+Label(serverFrame, text = "Server", bg = "black", fg = "white").grid(row = 0, column = 0)
 serverEntry = Entry(serverFrame)
 serverEntry.grid(row = 0, column = 1)
-Label(serverFrame, text = "Port").grid(row = 0, column = 2)
+Label(serverFrame, text = "Port", bg = "black", fg = "white").grid(row = 0, column = 2)
 portEntry = Entry(serverFrame)
 portEntry.grid(row = 0, column = 3)
-Label(serverFrame, text = "User Name").grid(row = 1, column = 0)
+Label(serverFrame, text = "User Name", bg = "black", fg = "white").grid(row = 1, column = 0)
 unameEntry = Entry(serverFrame)
 unameEntry.grid(row = 1, column = 1)
-Label(serverFrame, text = "Password").grid(row = 2, column = 0)
+Label(serverFrame, text = "Password", bg = "black", fg = "white").grid(row = 2, column = 0)
 pwdEntry = Entry(serverFrame, show = '*')
 pwdEntry.grid(row = 2, column = 1)
 
@@ -341,13 +365,13 @@ outputFrame = LabelFrame(root, text = "Output", padx = 15, pady = 15)
 outputFrame.grid(row = 2, column = 0, sticky = W)
 
 outpttxt = ""
-outpt = Text(outputFrame, width = 150)
+outpt = Text(outputFrame, width = 113)
 outpt.grid(row = 0, column = 0, sticky = W)
 outpt_scroll = Scrollbar(outputFrame, command = outpt.yview)
 outpt_scroll.grid(row = 0, column = 1, sticky = 'nsew')
 outpt['yscrollcommand'] = outpt_scroll.set
 
-
+change_color()
 
 # KEY BINDINGS
 root.bind('<Return>', thread1_event_set)
@@ -362,7 +386,7 @@ r4_1.bind('<FocusIn>', r4_1_focusIn)
 r4_1.bind('<FocusOut>', r4_1_focusOut)
 
 
-Button(root, text = 'CONNECT', command = thread1_idle_set).grid(row = 10, column = 0)
+connect_button = Button(root, text = 'CONNECT', command = thread1_idle_set, bg = "black", fg = "white").grid(row = 10, column = 0)
 
 
 # THREADING
