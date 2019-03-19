@@ -1,41 +1,49 @@
 from tkinter import *
 from tkinter import messagebox
-import os
+import yaml
+import keyring
+import os, sys
 import threading
 import paramiko
 import time
 import pyperclip
+import io
 
 
 class Rememberator:
-    
-    def __init__(self):
-        self.fname = 'credentials.txt'
         
     def save_credentials(self):
-        self.f = open(self.fname, 'w+')
-        self.f.write(unameEntry.get() + '\n' + pwdEntry.get() + '\n' + portEntry.get())
-        messagebox.showinfo('INFO', 'Credentials have been saved')
+        self.creds = {
+            'uname' : unameEntry.get(),
+            'port' : portEntry.get()
+            }
+        
+        self.pwd = pwdEntry.get()
+        keyring.set_password('SSH', unameEntry.get(), self.pwd)
+        
+        conf_file = open('config.yml', 'w+')
+        yaml.dump(self.creds, conf_file)
+        
         
     def check_if_file_exists(self):
-        check = os.path.isfile('./credentials.txt')
-        return check
+        self.check = os.path.isfile('./config.yml')
+        return self.check
         
     def insert_credentials(self):
         if self.check_if_file_exists():
             try:
-                f = open('credentials.txt', 'r')
-                info = f.readlines()
-                unameEntry.insert(0, info[0])
-                pwdEntry.insert(0, info[1])
-                portEntry.insert(0, info[2])
+                with open('config.yml', 'r') as stream:
+                    creds = yaml.load(stream)
+                unameEntry.insert(0, creds['uname'])
+                portEntry.insert(0, creds['port'])
+                pwdEntry.insert(0, keyring.get_password('SSH', creds['uname']))
             except:
-                messagebox.showinfo('ERROR', 'Error ocured while trying to insert the credentials\nContact John for more info')
-                thread1._stop()
+                pass
 
 class Connection:
     
     def __init__(self):
+        self.output = ''
         self.hostname = serverEntry.get().strip()
         self.port = portEntry.get().strip()
         self.username = unameEntry.get().strip()
@@ -96,18 +104,35 @@ class Connection:
             r3_2.delete(0, 'end')
             r3_3.delete(0, 'end')
     
+        
     def output_recv(self):
         while True:
             if self.channel.recv_ready():
-                output = self.channel.recv(1024).decode('ascii')
-                outpt_insert(output)
+                self.output = self.channel.recv(10240).decode('utf-8')
+                outpt_insert(self.output)
                 outpt.see("end")
-                print(output)
-            else:
-                time.sleep(0.5)
-                if not(self.channel.recv_ready()):
-                    break
-        
+                print(self.output, sep=' ', end='', flush=True)
+#                 buf = io.StringIO(self.output)
+#                 for lines in buf.read().split('\n'):
+#                     print(lines)
+                time.sleep(0.25)
+            elif (self.hostname + ":" + self.username) in self.output and self.channel.recv_ready() == False:
+                break
+            
+#     def buffer(self, out):
+#         global first
+#         if('%') in out:
+#             try:
+#                 if int(out.split('%')[0]) >= 0 and int(out.split('%')[0]) <= 100:
+#                     self.second = out.split('%')[0]
+#                     if(first != self.second):
+#                         first = self.second
+#                         print(self.second + '%', end = '')
+#             except:
+#                 pass
+#         else:
+#             print(out)
+                
     def exec_connection(self):
         self.skip_command1 = False
         self.__init__()
@@ -128,6 +153,8 @@ class Connection:
             
             self.output_recv()
 
+#             WYKONUJE SIE DO RECV ^, PO NIM CHUJNIA
+
             thread1_event.clear()
             thread1_event.wait()
             self.__init__()
@@ -137,30 +164,30 @@ class Connection:
             
             else:
             
-                if (varval.get() == 1) or (varval.get() == 2):
+                if (varval.get() == 1) or (varval.get() == 2 or (varval.get() == 3)):
                     
                     self.entry_delete()
                     
                     if hasattr(Connection(), 'command_1') & self.skip_command1 == False:
                         self.skip_command1 = True
                         self.channel.send(self.command_1 + '\n')
-                        print(self.channel.recv_ready())
                         self.output_recv()
+
                     if hasattr(Connection(), 'command_2'):
                         self.channel.send(self.command_2 + '\n')
-                    else:
-                        messagebox.showinfo('INFO', 'No data given')
+#                     else:
+#                         messagebox.showinfo('INFO', 'No data given')
                         
-                elif (varval.get() == 3):
-                    self.entry_delete()
-                    stdin_, stdout_, stderr_ = self.sshClient.exec_command(self.command_1)
-                    outpt_insert('\nWait for output... Patiently...\n')
-                    print('\nWait for output... Patiently...\n')
-                    stdout_.channel.recv_exit_status()
-                    lines = stdout_.readlines()
-                    for line in lines:
-                        print(line)
-                    outpt_insert('\nOutput ready in CMD\n')
+#                 elif (varval.get() == 3):
+#                     self.entry_delete()
+#                     stdin_, stdout_, stderr_ = self.sshClient.exec_command(self.command_1)
+#                     outpt_insert('\nWait for output... Patiently...\n')
+#                     print('\nWait for output... Patiently...\n')
+#                     stdout_.channel.recv_exit_status()
+#                     lines = stdout_.readlines()
+#                     for line in lines:
+#                         print(line)
+#                     outpt_insert('\nOutput ready in CMD\n')
                 
                 elif (varval.get() == 4):
                     self.entry_delete()
@@ -185,18 +212,24 @@ def clipboard_paste(event):
         
         if varval.get() == 1:
             serverEntry.delete(0, 'end')
+            r1_1.delete(0, 'end')
+            r1_4.delete(0, 'end')
             serverEntry.insert(0,data[0])
             r1_1.insert(0, data[1])
             r1_4.insert(0, data[2])
             
         if varval.get() == 2:
             serverEntry.delete(0, 'end')
+            r2_1.delete(0, 'end')
+            r2_3.delete(0, 'end')
             serverEntry.insert(0,data[0])
             r2_1.insert(0, data[1])
             r2_3.insert(0, data[2])
             
         if varval.get() == 3:
             serverEntry.delete(0, 'end')
+            r3_2.delete(0, 'end')
+            r3_3.delete(0, 'end')
             serverEntry.insert(0,data[0])
             r3_2.insert(0, data[1])
             r3_3.insert(0, data[2])
@@ -204,6 +237,10 @@ def clipboard_paste(event):
         if varval.get() == 4:
             serverEntry.delete(0, 'end')
             serverEntry.insert(0,data[0])
+            
+    elif len(data) == 1:
+        serverEntry.delete(0, 'end')
+        serverEntry.insert(0,data[0])
         
 def prev_command_save():
     prev_command_list.append(r4_1.get())
@@ -239,6 +276,14 @@ def r4_1_focusOut(event):
     global r4_1_focus
     r4_1_focus = False
 
+def show_shortcuts():
+    messagebox.showinfo(
+                        'SHORTCUTS', 'ENTER\nSend command to the server\n\n'
+                        + 'F1 - F4\nSelect script\n\n'
+                        + 'F9\nPaste data into the fields.\nData in clipboard must be formated as follows:\nServerName Argument1 Argument2\nOR\nServerName\n\n'
+                        + 'F12\nExecute Connection (Same as "CONNECT" button)'
+                        )
+                        
     
 def F1(event):
     varval.set(1)
@@ -282,6 +327,9 @@ def change_color():
     for wid in widgets_text:
         wid.configure(insertbackground = "white")
     
+
+
+
 root = Tk()
 root.title("SSH")
 root.configure(bg = "black")
@@ -290,6 +338,17 @@ root.geometry('960x1080+951+0')
 prev_command_list = []
 prev_command_count = 0
 r4_1_focus = False
+first = 0
+
+
+# FILEMENU
+menubar = Menu(root)
+filemenu = Menu(menubar, tearoff = 0)
+filemenu.add_command(label = 'Show shortcuts', command = show_shortcuts)
+menubar.add_cascade(label = 'help', menu = filemenu)
+root.config(menu = menubar)
+
+
 
 # SERVER DETAILS
 serverFrame = LabelFrame(root, text = "Server Connection", padx = 15, pady = 15)
@@ -376,6 +435,7 @@ outputFrame.grid(row = 2, column = 0, sticky = W)
 
 outpttxt = ""
 outpt = Text(outputFrame, width = 113)
+
 outpt.grid(row = 0, column = 0, sticky = W)
 outpt_scroll = Scrollbar(outputFrame, command = outpt.yview)
 outpt_scroll.grid(row = 0, column = 1, sticky = 'nsew')
@@ -398,13 +458,15 @@ r4_1.bind('<FocusOut>', r4_1_focusOut)
 
 connect_button = Button(root, text = 'CONNECT', command = thread1_idle_set, bg = "black", fg = "white").grid(row = 10, column = 0)
 
-
 # THREADING
 thread1 = threading.Thread(name = "Thread-1", target = Connection().idle)
 thread1_event = threading.Event()
 thread1_idle = threading.Event()
 thread1.start()
+thread2 = threading.Thread(name = 'Thread-2', target = Rememberator().insert_credentials())
+thread2.start()
 
-Rememberator().insert_credentials()
 
 root.mainloop()
+
+# chujowo zriobione troche, caly mainloop powinien byc zrealizowany jako osobny thread
