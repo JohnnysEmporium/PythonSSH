@@ -51,12 +51,9 @@ class Connection:
         if varval.get() == 1:
             self.command_1 = 'sudo -u mqm runmqsc ' + r1_1.get()
             if var1_2.get() == 'display':
-                global r1_4_temp
-                r1_4_temp = r1_4.get()
                 self.command_2 = var1_2.get() + ' qlocal ' + "('" + r1_4.get() + "') CURDEPTH MAXDEPTH"
-                r1_4.delete(0,'end')
             elif var1_2.get() == "alter":
-                self.command_2 = var1_2.get() + ' qlocal' + "('" + r1_4_temp + "') MAXDEPTH(" + r1_4.get() + ")" 
+                self.command_2 = var1_2.get() + ' qlocal' + "('" + r1_4.get() + "') MAXDEPTH(" + r1_4.get() + ")" 
         elif varval.get() == 2:
             self.command_1 = 'runmqsc ' + r2_1.get()
             self.command_2 = var2_2.get() + " channel('" + r2_3.get() + "')"  
@@ -108,7 +105,7 @@ class Connection:
     def output_recv(self):
         while True:
             if self.channel.recv_ready():
-                self.output = self.channel.recv(10240).decode('utf-8')
+                self.output = self.channel.recv(1024).decode('utf-8')
                 outpt_insert(self.output)
                 outpt.see("end")
                 print(self.output, sep=' ', end='', flush=True)
@@ -118,6 +115,20 @@ class Connection:
                 time.sleep(0.25)
             elif (self.hostname + ":" + self.username) in self.output and self.channel.recv_ready() == False:
                 break
+            
+    def output_recv_short(self):
+        self.counter = 0
+        while True:
+            if self.channel.recv_ready():
+                self.output = self.channel.recv(1024).decode('utf-8')
+                outpt_insert(self.output)
+                outpt.see("end")
+                print(self.output, sep=' ', end='', flush=True)
+                break
+            elif(self.counter > 20):
+                    break
+            time.sleep(0.25)
+            self.counter += 1
             
 #     def buffer(self, out):
 #         global first
@@ -134,7 +145,6 @@ class Connection:
 #             print(out)
                 
     def exec_connection(self):
-        self.skip_command1 = False
         self.__init__()
         try:
             self.sshClient = paramiko.SSHClient()
@@ -144,6 +154,7 @@ class Connection:
             self.channel.get_pty()
             self.channel.invoke_shell()
             outpt_insert('CONNECTION INITIALIZED\n\n')
+            self.output_recv()
         except:
             outpt_insert('Something went wrong, check Server\n')
             self.sshClient.close()
@@ -151,10 +162,6 @@ class Connection:
             
         while True:
             
-            self.output_recv()
-
-#             WYKONUJE SIE DO RECV ^, PO NIM CHUJNIA
-
             thread1_event.clear()
             thread1_event.wait()
             self.__init__()
@@ -163,18 +170,39 @@ class Connection:
                 messagebox.showinfo('INFO', 'Select Script first')
             
             else:
+                
+                self.entry_delete()
             
-                if (varval.get() == 1) or (varval.get() == 2 or (varval.get() == 3)):
+                if (varval.get() == 1):
                     
-                    self.entry_delete()
-                    
-                    if hasattr(Connection(), 'command_1') & self.skip_command1 == False:
-                        self.skip_command1 = True
+                    if hasattr(Connection(), 'command_1'):
                         self.channel.send(self.command_1 + '\n')
-                        self.output_recv()
+                        r1_1.delete(0, 'end')
+                        self.output_recv_short()
 
                     if hasattr(Connection(), 'command_2'):
                         self.channel.send(self.command_2 + '\n')
+                        self.output_recv_short()
+              
+                elif(varval.get() == 2):
+                    
+                    if hasattr(Connection(), 'command_1'):
+                        self.channel.send(self.command_1 + '\n')
+                        r2_1.delete(0, 'end')
+                        self.output_recv_short()
+                        
+                    if hasattr(Connection(), 'command_2'):
+                        self.channel.send(self.command_2 + '\n')
+                        self.output_recv_short()
+                        
+                elif(varval.get() == 3):
+                    
+                    if hasattr(Connection(), 'command_1'):
+                        self.channel.send(self.command_1 + '\n')
+                        self.output_recv()
+                        
+                
+                
 #                     else:
 #                         messagebox.showinfo('INFO', 'No data given')
                         
@@ -194,7 +222,9 @@ class Connection:
                     hasattr(Connection(), 'command')
                     command = self.command 
                     self.channel.send(command + '\n')
+                    self.output_recv_short()
                     if command == 'exit':
+                        print('\nLogged out successfully')
                         outpt_insert('\nLogged out successfully')
                         outpt.see('end')
                         break
