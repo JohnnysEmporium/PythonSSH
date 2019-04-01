@@ -2,13 +2,11 @@ from tkinter import *
 from tkinter import messagebox
 import yaml
 import keyring
-import os, sys
+import os
 import threading
 import paramiko
 import time
 import pyperclip
-import io
-
 
 class Rememberator:
         
@@ -67,8 +65,12 @@ class Connection:
             
     
     def idle(self):
+        print('wait')
+        global flag_exit
         thread1_idle.clear()
         thread1_idle.wait()
+        if flag_exit:
+            os._exit(1)
         self.exec_connection()
     
     def entry_delete(self):
@@ -162,8 +164,23 @@ class Connection:
             
         while True:
             
+            if flag_exit:
+                try:
+                    self.sshClient.close()
+                except:
+                    pass
+                os._exit(1)
+            
             thread1_event.clear()
             thread1_event.wait()
+            
+            if flag_exit:
+                try:
+                    self.sshClient.close()
+                except:
+                    pass
+                os._exit(1)
+            
             self.__init__()
 
             if varval.get() == 0:
@@ -357,13 +374,20 @@ def change_color():
     for wid in widgets_text:
         wid.configure(insertbackground = "white")
     
-
+def quit_():
+    global flag_exit
+    flag_exit = True
+    thread1_idle.set()
+    thread1_event.set()
 
 
 root = Tk()
 root.title("SSH")
 root.configure(bg = "black")
 root.geometry('960x1080+951+0')
+root.protocol("WM_DELETE_WINDOW", quit_)
+
+flag_exit = False
 
 prev_command_list = []
 prev_command_count = 0
