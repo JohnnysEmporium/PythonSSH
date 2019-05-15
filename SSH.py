@@ -119,18 +119,24 @@ class Connection:
                 break
             
     def output_recv_short(self):
-        self.counter = 0
+        Counter = 0
         while True:
             if self.channel.recv_ready():
                 self.output = self.channel.recv(1024).decode('utf-8')
                 outpt_insert(self.output)
                 outpt.see("end")
                 print(self.output, sep=' ', end='', flush=True)
+                Counter = 0
+            elif (self.hostname + ":") in self.output:
+                Counter = 0
                 break
-            elif(self.counter > 20):
+            elif self.channel.recv_ready() == False:
+                time.sleep(.1)
+                Counter += 1
+                if Counter > 10:
                     break
-            time.sleep(0.25)
-            self.counter += 1
+                
+                
             
 #     def buffer(self, out):
 #         global first
@@ -156,7 +162,7 @@ class Connection:
             self.channel.get_pty()
             self.channel.invoke_shell()
             outpt_insert('CONNECTION INITIALIZED\n\n')
-            self.output_recv()
+            self.output_recv_short()
         except:
             outpt_insert('Something went wrong, check Server\n')
             self.sshClient.close()
@@ -193,9 +199,10 @@ class Connection:
                 if (varval.get() == 1):
                     
                     if hasattr(Connection(), 'command_1'):
-                        self.channel.send(self.command_1 + '\n')
-                        r1_1.delete(0, 'end')
-                        self.output_recv_short()
+                        if r1_1.get() != '':
+                            self.channel.send(self.command_1 + '\n')
+                            r1_1.delete(0, 'end')
+                            self.output_recv_short()
 
                     if hasattr(Connection(), 'command_2'):
                         self.channel.send(self.command_2 + '\n')
@@ -204,9 +211,10 @@ class Connection:
                 elif(varval.get() == 2):
                     
                     if hasattr(Connection(), 'command_1'):
-                        self.channel.send(self.command_1 + '\n')
-                        r2_1.delete(0, 'end')
-                        self.output_recv_short()
+                        if r2_1.get() != '':
+                            self.channel.send(self.command_1 + '\n')
+                            r2_1.delete(0, 'end')
+                            self.output_recv_short()
                         
                     if hasattr(Connection(), 'command_2'):
                         self.channel.send(self.command_2 + '\n')
